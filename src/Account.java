@@ -1,103 +1,72 @@
-import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class Account {
-    private String name;
     private String accountNo;
+    private String name;
     private double balance;
+    private String password;
+    private String type;
+    private final List<String> transactionHistory = new ArrayList<>();
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
 
     public Account(String name, String accountNo, double balance) {
         this.name = name;
         this.accountNo = accountNo;
         this.balance = balance;
+        transactionHistory.add(timestamp() + " | Account created with balance ₹" + balance);
     }
 
+    public Account(String name, String accountNo, String password, String type, double balance) {
+        this.name = name;
+        this.accountNo = accountNo;
+        this.password = password;
+        this.type = type;
+        this.balance = balance;
+        transactionHistory.add(timestamp() + " | Account created with balance ₹" + balance);
+    }
+
+    // 🕓 Helper to get timestamp
+    private String timestamp() {
+        return "[" + dateFormat.format(new Date()) + "]";
+    }
+
+    // 💵 Deposit
+    public void deposit(double amount) {
+        if (amount > 0) {
+            balance += amount;
+            transactionHistory.add(timestamp() + " ✅ Deposited ₹" + amount + " | New Balance: ₹" + balance);
+        }
+    }
+
+    // 💳 Withdraw
+    public boolean withdraw(double amount) {
+        if (amount > 0 && amount <= balance) {
+            balance -= amount;
+            transactionHistory.add(timestamp() + " ⚠️ Withdrew ₹" + amount + " | New Balance: ₹" + balance);
+            return true;
+        } else {
+            transactionHistory.add(timestamp() + " ❌ Failed Withdrawal ₹" + amount + " | Insufficient Balance");
+        }
+        return false;
+    }
+
+    // 🧾 Get Transaction History
+    public List<String> getTransactionHistory() {
+        return transactionHistory;
+    }
+
+    // 👤 Getters
     public String getName() { return name; }
     public String getAccountNo() { return accountNo; }
     public double getBalance() { return balance; }
+    public String getType() { return type; }
 
-    // ---------- DATABASE METHODS ----------
-    public void deposit(double amount) {
-        balance += amount;
-        updateBalanceInDB();
-        saveTransaction("Deposit", amount);
-    }
-
-    public boolean withdraw(double amount) {
-        if (amount > balance) return false;
-        balance -= amount;
-        updateBalanceInDB();
-        saveTransaction("Withdraw", amount);
+    // ➕ Mock DB Method
+    public static boolean addNewAccount(String name, String accNo, String password, String type, double balance) {
+        System.out.println("✅ New account created for " + name + " (" + accNo + ")");
         return true;
-    }
-
-    private void updateBalanceInDB() {
-        try (Connection con = DBConnection.getConnection()) {
-            PreparedStatement ps = con.prepareStatement(
-                    "UPDATE accounts SET balance = ? WHERE account_no = ?"
-            );
-            ps.setDouble(1, balance);
-            ps.setString(2, accountNo);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void saveTransaction(String type, double amount) {
-        try (Connection con = DBConnection.getConnection()) {
-            PreparedStatement ps = con.prepareStatement(
-                    "INSERT INTO transactions (account_no, type, amount, balance_after) VALUES (?, ?, ?, ?)"
-            );
-            ps.setString(1, accountNo);
-            ps.setString(2, type);
-            ps.setDouble(3, amount);
-            ps.setDouble(4, balance);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public List<String> getTransactionHistory() {
-        List<String> history = new ArrayList<>();
-        try (Connection con = DBConnection.getConnection()) {
-            PreparedStatement ps = con.prepareStatement(
-                    "SELECT * FROM transactions WHERE account_no = ? ORDER BY timestamp DESC"
-            );
-            ps.setString(1, accountNo);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                String record = String.format("%s - %s ₹%.2f | Bal: ₹%.2f",
-                        rs.getTimestamp("timestamp"),
-                        rs.getString("type"),
-                        rs.getDouble("amount"),
-                        rs.getDouble("balance_after"));
-                history.add(record);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return history;
-    }
-
-    // ---------- ADD ACCOUNT FEATURE ----------
-    public static boolean addNewAccount(String customerName, String accountNo, String password, String type, double balance) {
-        try (Connection con = DBConnection.getConnection()) {
-            PreparedStatement ps = con.prepareStatement(
-                    "INSERT INTO accounts (name, account_no, password, type, balance) VALUES (?, ?, ?, ?, ?)"
-            );
-            ps.setString(1, customerName);
-            ps.setString(2, accountNo);
-            ps.setString(3, password);
-            ps.setString(4, type);
-            ps.setDouble(5, balance);
-            ps.executeUpdate();
-            return true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
     }
 }
