@@ -8,7 +8,7 @@ public class DashboardFrame extends JFrame {
     private final Account account;
     private JLabel balanceLabel, welcomeLabel, totalBalanceValueLabel;
     private JTextArea historyArea;
-    private JPanel contentPanel;
+    private JPanel contentPanel, sidePanel;
 
     public DashboardFrame(Account account) {
         this.account = account;
@@ -24,12 +24,11 @@ public class DashboardFrame extends JFrame {
         setLayout(new BorderLayout());
 
         // ---------- LEFT MENU PANEL ----------
-        JPanel sidePanel = new JPanel();
+        sidePanel = new JPanel();
         sidePanel.setBackground(new Color(33, 60, 115));
         sidePanel.setPreferredSize(new Dimension(240, getHeight()));
         sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
 
-        // Load Bank Icon (Image or fallback)
         JLabel bankIcon;
         try {
             ImageIcon icon = new ImageIcon(getClass().getResource("/images/bank.png"));
@@ -85,44 +84,64 @@ public class DashboardFrame extends JFrame {
                 }
             });
 
-            if (item.contains("Logout")) {
-                btn.addActionListener(e -> {
-                    new LoginFrame().setVisible(true);
-                    dispose();
-                });
-            }
+            // 🎯 Add button functionality
+            btn.addActionListener(e -> {
+                switch (item) {
+                    case "🏠  Home" -> showHomePanel();
+                    case "👤  Profile" -> showProfilePanel();
+                    case "💰  Account Details" -> showAccountDetails();
+                    case "📈  Transactions" -> showTransactionPanel();
+                    case "🧾  Reports" -> showReportsPanel();
+                    case "🔒  Change Password" -> showChangePasswordPanel();
+                    case "🚪  Logout" -> {
+                        new LoginFrame().setVisible(true);
+                        dispose();
+                    }
+                }
+            });
 
             sidePanel.add(Box.createRigidArea(new Dimension(0, 8)));
             sidePanel.add(btn);
         }
 
         // ---------- MAIN CONTENT ----------
-        contentPanel = new JPanel(new BorderLayout(20, 20));
+        contentPanel = new JPanel(new BorderLayout());
         contentPanel.setBackground(new Color(245, 247, 250));
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        showHomePanel(); // default home view
 
+        add(sidePanel, BorderLayout.WEST);
+        add(contentPanel, BorderLayout.CENTER);
+    }
+
+    // 🏠 HOME PANEL
+    private void showHomePanel() {
+        contentPanel.removeAll();
+        JPanel homePanel = new JPanel(new BorderLayout(20, 20));
+        homePanel.setBackground(new Color(245, 247, 250));
+        homePanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Header
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setOpaque(false);
 
-        welcomeLabel = new JLabel("Welcome, " + account.getName() + " 👋", SwingConstants.LEFT);
+        welcomeLabel = new JLabel("Welcome, " + account.getName() + " 👋");
         welcomeLabel.setFont(new Font("Segoe UI Semibold", Font.BOLD, 22));
-        welcomeLabel.setForeground(new Color(33, 33, 33));
-        topPanel.add(welcomeLabel, BorderLayout.WEST);
 
-        balanceLabel = new JLabel("Current Balance: ₹" + account.getBalance(), SwingConstants.RIGHT);
+        balanceLabel = new JLabel("Current Balance: ₹" + account.getBalance());
         balanceLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         balanceLabel.setForeground(new Color(25, 118, 210));
+
+        topPanel.add(welcomeLabel, BorderLayout.WEST);
         topPanel.add(balanceLabel, BorderLayout.EAST);
 
-        // ---------- DASHBOARD CARDS ----------
+        // Info Cards
         JPanel cardsPanel = new JPanel(new GridLayout(1, 3, 20, 0));
         cardsPanel.setOpaque(false);
-
         cardsPanel.add(createInfoCard("💰", "Total Balance", "₹" + account.getBalance(), new Color(79, 195, 247)));
         cardsPanel.add(createInfoCard("⬆️", "Deposits", "Track your savings", new Color(102, 187, 106)));
         cardsPanel.add(createInfoCard("⬇️", "Withdrawals", "Monitor expenses", new Color(239, 108, 0)));
 
-        // ---------- TRANSACTION HISTORY ----------
+        // History Panel
         JPanel historyPanel = new RoundedPanel(25);
         historyPanel.setLayout(new BorderLayout(10, 10));
         historyPanel.setBackground(Color.WHITE);
@@ -136,13 +155,13 @@ public class DashboardFrame extends JFrame {
         historyPanel.add(scrollPane, BorderLayout.CENTER);
         updateHistory();
 
-        // ---------- ACTION BUTTONS ----------
+        // Action Buttons
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
         actionPanel.setOpaque(false);
         String[][] actions = {
-                {"➕ Add Account", "#4CAF50"},
                 {"💵 Deposit", "#43A047"},
                 {"💳 Withdraw", "#FB8C00"},
+                {"➕ Add Account", "#4CAF50"},
                 {"📊 View Report", "#039BE5"}
         };
 
@@ -161,26 +180,78 @@ public class DashboardFrame extends JFrame {
                 case "💳 Withdraw" -> b.addActionListener(e -> withdraw());
                 case "➕ Add Account" -> b.addActionListener(e -> addAccount());
                 case "📊 View Report" ->
-                        JOptionPane.showMessageDialog(this, "📈 Report feature coming soon!", "SwiftBank", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "📈 Report feature coming soon!");
             }
             actionPanel.add(b);
         }
 
-        // ---------- CENTER LAYOUT ----------
-        JPanel centerPanel = new JPanel(new BorderLayout(20, 20));
-        centerPanel.setOpaque(false);
-        centerPanel.add(cardsPanel, BorderLayout.NORTH);
-        centerPanel.add(historyPanel, BorderLayout.CENTER);
-        centerPanel.add(actionPanel, BorderLayout.SOUTH);
+        homePanel.add(topPanel, BorderLayout.NORTH);
+        homePanel.add(cardsPanel, BorderLayout.CENTER);
+        homePanel.add(historyPanel, BorderLayout.SOUTH);
+        homePanel.add(actionPanel, BorderLayout.PAGE_END);
 
-        contentPanel.add(topPanel, BorderLayout.NORTH);
-        contentPanel.add(centerPanel, BorderLayout.CENTER);
-
-        add(sidePanel, BorderLayout.WEST);
-        add(contentPanel, BorderLayout.CENTER);
+        contentPanel.add(homePanel, BorderLayout.CENTER);
+        contentPanel.revalidate();
+        contentPanel.repaint();
     }
 
-    // ---------- CREATE INFO CARD ----------
+    // 👤 PROFILE PANEL
+    private void showProfilePanel() {
+        contentPanel.removeAll();
+        JPanel profilePanel = new JPanel(new BorderLayout());
+        profilePanel.setBackground(Color.WHITE);
+        profilePanel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
+
+        JLabel title = new JLabel("👤 Profile Information", SwingConstants.CENTER);
+        title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+
+        JTextArea details = new JTextArea(
+                "Name: " + account.getName() + "\n" +
+                        "Account No: " + account.getAccountNo() + "\n" +
+                        "Balance: ₹" + account.getBalance() + "\n" +
+                        "Type: Saving"
+        );
+        details.setEditable(false);
+        details.setFont(new Font("Consolas", Font.PLAIN, 14));
+
+        profilePanel.add(title, BorderLayout.NORTH);
+        profilePanel.add(details, BorderLayout.CENTER);
+
+        contentPanel.add(profilePanel);
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+    // 💰 ACCOUNT DETAILS
+    private void showAccountDetails() {
+        JOptionPane.showMessageDialog(this, "Account Details feature coming soon!");
+    }
+
+    // 📈 TRANSACTIONS
+    private void showTransactionPanel() {
+        JOptionPane.showMessageDialog(this, "Transactions module under development!");
+    }
+
+    // 🧾 REPORTS
+    private void showReportsPanel() {
+        JOptionPane.showMessageDialog(this, "Reports section coming soon!");
+    }
+
+    // 🔒 CHANGE PASSWORD
+    private void showChangePasswordPanel() {
+        JPasswordField oldPass = new JPasswordField();
+        JPasswordField newPass = new JPasswordField();
+        Object[] form = {
+                "Old Password:", oldPass,
+                "New Password:", newPass
+        };
+        int result = JOptionPane.showConfirmDialog(this, form, "Change Password", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            JOptionPane.showMessageDialog(this, "Password changed successfully (mock-up).");
+        }
+    }
+
+    // ---------- INFO CARD CREATOR ----------
     private JPanel createInfoCard(String icon, String title, String value, Color color) {
         JPanel card = new RoundedPanel(20);
         card.setLayout(new BorderLayout());
@@ -199,10 +270,7 @@ public class DashboardFrame extends JFrame {
         valueLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         valueLabel.setForeground(Color.WHITE);
 
-        // 🔥 Keep reference for "Total Balance" card
-        if (title.equals("Total Balance")) {
-            totalBalanceValueLabel = valueLabel;
-        }
+        if (title.equals("Total Balance")) totalBalanceValueLabel = valueLabel;
 
         card.add(iconLabel, BorderLayout.NORTH);
         card.add(titleLabel, BorderLayout.CENTER);
@@ -278,12 +346,8 @@ public class DashboardFrame extends JFrame {
     private void updateUIComponents() {
         double newBalance = account.getBalance();
         balanceLabel.setText("Current Balance: ₹" + newBalance);
-
-        // 🔥 Update total balance card
-        if (totalBalanceValueLabel != null) {
+        if (totalBalanceValueLabel != null)
             totalBalanceValueLabel.setText("₹" + newBalance);
-        }
-
         updateHistory();
     }
 
