@@ -6,7 +6,7 @@ import java.util.List;
 
 public class DashboardFrame extends JFrame {
     private final Account account;
-    private JLabel balanceLabel, welcomeLabel;
+    private JLabel balanceLabel, welcomeLabel, totalBalanceValueLabel;
     private JTextArea historyArea;
     private JPanel contentPanel;
 
@@ -180,6 +180,7 @@ public class DashboardFrame extends JFrame {
         add(contentPanel, BorderLayout.CENTER);
     }
 
+    // ---------- CREATE INFO CARD ----------
     private JPanel createInfoCard(String icon, String title, String value, Color color) {
         JPanel card = new RoundedPanel(20);
         card.setLayout(new BorderLayout());
@@ -198,12 +199,18 @@ public class DashboardFrame extends JFrame {
         valueLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         valueLabel.setForeground(Color.WHITE);
 
+        // 🔥 Keep reference for "Total Balance" card
+        if (title.equals("Total Balance")) {
+            totalBalanceValueLabel = valueLabel;
+        }
+
         card.add(iconLabel, BorderLayout.NORTH);
         card.add(titleLabel, BorderLayout.CENTER);
         card.add(valueLabel, BorderLayout.SOUTH);
         return card;
     }
 
+    // ---------- TRANSACTION LOGIC ----------
     private void deposit() {
         String input = JOptionPane.showInputDialog(this, "Enter deposit amount:");
         if (input != null && !input.isEmpty()) {
@@ -267,8 +274,16 @@ public class DashboardFrame extends JFrame {
         }
     }
 
+    // ---------- UI REFRESH ----------
     private void updateUIComponents() {
-        balanceLabel.setText("Current Balance: ₹" + account.getBalance());
+        double newBalance = account.getBalance();
+        balanceLabel.setText("Current Balance: ₹" + newBalance);
+
+        // 🔥 Update total balance card
+        if (totalBalanceValueLabel != null) {
+            totalBalanceValueLabel.setText("₹" + newBalance);
+        }
+
         updateHistory();
     }
 
@@ -278,9 +293,9 @@ public class DashboardFrame extends JFrame {
         for (String h : history) historyArea.append(h + "\n");
     }
 
+    // ---------- CUSTOM ROUNDED PANEL ----------
     static class RoundedPanel extends JPanel {
         private final int radius;
-
         public RoundedPanel(int radius) {
             this.radius = radius;
             setOpaque(false);
