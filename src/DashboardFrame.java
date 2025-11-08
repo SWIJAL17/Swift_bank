@@ -29,21 +29,16 @@ public class DashboardFrame extends JFrame {
         sidePanel.setPreferredSize(new Dimension(240, getHeight()));
         sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
 
-        // Load Bank Icon (Image or Fallback Emoji)
+        // Load Bank Icon (Image or fallback)
         JLabel bankIcon;
         try {
-            ImageIcon icon = new ImageIcon("images/bank.png"); // <-- place your bank.png in /images/
-            if (icon.getIconWidth() > 0) {
-                Image scaled = icon.getImage().getScaledInstance(80, 80, Image.SCALE_SMOOTH);
-                bankIcon = new JLabel(new ImageIcon(scaled), SwingConstants.CENTER);
-            } else {
-                throw new Exception("Image not found, using emoji fallback");
-            }
+            ImageIcon icon = new ImageIcon(getClass().getResource("/images/bank.png"));
+            Image scaled = icon.getImage().getScaledInstance(80, 80, Image.SCALE_SMOOTH);
+            bankIcon = new JLabel(new ImageIcon(scaled), SwingConstants.CENTER);
         } catch (Exception e) {
-            bankIcon = new JLabel("\uD83C\uDFE6", SwingConstants.CENTER); // 🏦
+            bankIcon = new JLabel("\uD83C\uDFE6", SwingConstants.CENTER);
             bankIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 64));
         }
-
         bankIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel bankName = new JLabel("SwiftBank Limited", SwingConstants.CENTER);
@@ -146,9 +141,6 @@ public class DashboardFrame extends JFrame {
         actionPanel.setOpaque(false);
         String[][] actions = {
                 {"➕ Add Account", "#4CAF50"},
-                {"🔄 Update Details", "#0288D1"},
-                {"🔍 Search", "#7E57C2"},
-                {"❌ Delete", "#E53935"},
                 {"💵 Deposit", "#43A047"},
                 {"💳 Withdraw", "#FB8C00"},
                 {"📊 View Report", "#039BE5"}
@@ -161,15 +153,16 @@ public class DashboardFrame extends JFrame {
             b.setBackground(Color.decode(a[1]));
             b.setFocusPainted(false);
             b.setBorderPainted(false);
-            b.setPreferredSize(new Dimension(150, 40));
+            b.setPreferredSize(new Dimension(160, 40));
             b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
             switch (a[0]) {
                 case "💵 Deposit" -> b.addActionListener(e -> deposit());
                 case "💳 Withdraw" -> b.addActionListener(e -> withdraw());
-                case "📊 View Report" -> JOptionPane.showMessageDialog(this, "Report feature coming soon!");
+                case "➕ Add Account" -> b.addActionListener(e -> addAccount());
+                case "📊 View Report" ->
+                        JOptionPane.showMessageDialog(this, "📈 Report feature coming soon!", "SwiftBank", JOptionPane.INFORMATION_MESSAGE);
             }
-
             actionPanel.add(b);
         }
 
@@ -211,7 +204,6 @@ public class DashboardFrame extends JFrame {
         return card;
     }
 
-    // ---------- TRANSACTION LOGIC ----------
     private void deposit() {
         String input = JOptionPane.showInputDialog(this, "Enter deposit amount:");
         if (input != null && !input.isEmpty()) {
@@ -240,6 +232,41 @@ public class DashboardFrame extends JFrame {
         }
     }
 
+    private void addAccount() {
+        JTextField nameField = new JTextField();
+        JTextField accField = new JTextField();
+        JPasswordField passField = new JPasswordField();
+        JComboBox<String> typeBox = new JComboBox<>(new String[]{"Saving", "Current"});
+        JTextField balanceField = new JTextField();
+
+        Object[] form = {
+                "Name:", nameField,
+                "Account No:", accField,
+                "Password:", passField,
+                "Account Type:", typeBox,
+                "Initial Balance:", balanceField
+        };
+
+        int result = JOptionPane.showConfirmDialog(this, form, "Add New Account", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                String name = nameField.getText();
+                String accNo = accField.getText();
+                String password = new String(passField.getPassword());
+                String type = (String) typeBox.getSelectedItem();
+                double balance = Double.parseDouble(balanceField.getText());
+
+                if (Account.addNewAccount(name, accNo, password, type, balance)) {
+                    JOptionPane.showMessageDialog(this, "✅ New account created successfully!");
+                } else {
+                    JOptionPane.showMessageDialog(this, "⚠️ Failed to create account.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Invalid input. Please check the values.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
     private void updateUIComponents() {
         balanceLabel.setText("Current Balance: ₹" + account.getBalance());
         updateHistory();
@@ -251,7 +278,6 @@ public class DashboardFrame extends JFrame {
         for (String h : history) historyArea.append(h + "\n");
     }
 
-    // ---------- ROUNDED PANEL ----------
     static class RoundedPanel extends JPanel {
         private final int radius;
 
