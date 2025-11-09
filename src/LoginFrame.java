@@ -134,6 +134,7 @@ public class LoginFrame extends JFrame {
         add(bgPanel);
     }
 
+    // 🔐 --- Updated login() using customers + accounts JOIN ---
     private void login() {
         String accNo = accNoField.getText().trim();
         String password = new String(passwordField.getPassword()).trim();
@@ -157,10 +158,18 @@ public class LoginFrame extends JFrame {
                         return null;
                     }
 
-                    PreparedStatement ps = con.prepareStatement(
-                            "SELECT * FROM accounts WHERE account_no = ? AND password = ?");
+                    // ✅ JOIN customers + accounts
+                    String query = """
+                        SELECT a.account_no, a.balance, c.name
+                        FROM accounts a
+                        JOIN customers c ON a.customer_id = c.id
+                        WHERE a.account_no = ? AND c.password = ?
+                    """;
+
+                    PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, accNo);
                     ps.setString(2, password);
+
                     ResultSet rs = ps.executeQuery();
 
                     if (rs.next()) {
@@ -190,7 +199,7 @@ public class LoginFrame extends JFrame {
         worker.execute();
     }
 
-    // For testing
+    // --- Test Launcher ---
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new LoginFrame().setVisible(true));
     }
